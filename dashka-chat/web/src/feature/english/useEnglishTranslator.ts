@@ -24,6 +24,7 @@ export function useEnglishTranslator() {
   const bufferRef = useRef('')
   const lastTranslateTimeRef = useRef(0)
   const lastFinalRef = useRef('')
+  const isPartialInFlightRef = useRef(false)  // 🔥 v1.2.3 — блокировка параллельных запросов
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const mediaRecRef = useRef<MediaRecorder | null>(null)
@@ -76,12 +77,15 @@ export function useEnglishTranslator() {
   // direction в deps — пересоздаётся при смене направления
   const translatePartial = useCallback(async (text: string) => {
     if (!text.trim()) return
+    if (isPartialInFlightRef.current) return  // 🔥 v1.2.3 — не спамим параллельными запросами
     const { targetLang } = DIRECTION_CONFIG[state.direction]
+    isPartialInFlightRef.current = true
     try {
       const res = await apiClient.translate(text, targetLang)
-      // 🔥 v1.2.1 — заменяем перевод, не копим "портянку"
       set({ translatedText: res.translated_text })
     } catch {
+    } finally {
+      isPartialInFlightRef.current = false
     }
   }, [state.direction])
 
@@ -90,7 +94,8 @@ export function useEnglishTranslator() {
 
     bufferRef.current = ''
     lastTranslateTimeRef.current = 0
-    lastFinalRef.current = ''   // 👈 ДОБАВИТЬ
+    lastFinalRef.current = ''
+    isPartialInFlightRef.current = false  // 🔥 v1.2.3
 
     setState(prev => ({
       ...prev,
@@ -107,7 +112,8 @@ export function useEnglishTranslator() {
     if (micState !== 'Recording') {
       bufferRef.current = ''
       lastTranslateTimeRef.current = 0
-      lastFinalRef.current = ''   // 👈 ДОБАВИТЬ
+      lastFinalRef.current = ''
+      isPartialInFlightRef.current = false  // 🔥 v1.2.3
     }
 
     if (micState === 'Recording') {
