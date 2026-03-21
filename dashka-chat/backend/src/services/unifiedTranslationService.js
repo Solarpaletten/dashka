@@ -52,7 +52,7 @@ class UnifiedTranslationService {
             content:
               `You are a language detection expert. ` +
               `Analyze the text and respond with ONLY the ISO language code from this list: ` +
-              `EN, RU, DE, FR, ES, CS, PL, LT, LV, NO.\n` +
+              `EN, RU, .\n` +
               `Examples:\n"Hello world" → EN\n"Привет мир" → RU\n"Guten Tag" → DE\n` +
               `Respond with ONLY the 2-letter code, nothing else.`
           },
@@ -171,7 +171,7 @@ class UnifiedTranslationService {
 
       const audioPath = await speakText(
         translation.translatedText,
-        this.supportedLanguages[toLanguage]?.code || 'de'
+        this.supportedLanguages[toLanguage]?.code || 'en'
       );
       logger.info(`[voice] TTS done`);
 

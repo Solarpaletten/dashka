@@ -18,7 +18,7 @@ router.post('/translate',
       const { 
         text, 
         source_language,
-        target_language = 'DE',
+        target_language = 'EN',
         fromLang,
         toLang,
         from,
@@ -28,7 +28,7 @@ router.post('/translate',
       // source_language НЕ имеет дефолта — если не передан, будет undefined
       // translateText сам определит язык через GPT
       const sourceCode = (source_language || fromLang || from || '').toUpperCase() || null;
-      const targetCode = (target_language || toLang || to || 'DE').toUpperCase();
+      const targetCode = (target_language || toLang || to || 'EN').toUpperCase();
 
       // Кэш только если source известен
       if (sourceCode) {

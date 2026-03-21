@@ -25,10 +25,8 @@ class WhisperService {
     // ✅ P3: только имя файла (без полного пути), нет текста пользователя
     logger.info(`[whisper] Transcribing | file: ${path.basename(audioFilePath)} | lang: ${language}`);
 
-    const langMap = {
-      'fr-CH': 'fr', 'fr-FR': 'fr', 'fr-CA': 'fr',
+    const langMap = { 
       'ru-RU': 'ru', 'ru': 'ru',
-      'de-DE': 'de', 'de-AT': 'de',
       'en-US': 'en', 'en-GB': 'en'
     };
     const whisperLang = langMap[language] || (language === 'auto' ? undefined : language);

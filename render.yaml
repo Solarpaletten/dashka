@@ -1,0 +1,31 @@
+services:
+
+  # ── Backend ───────────────────────────────
+  - type: web
+    name: dashka-api
+    env: node
+    plan: free
+    rootDir: dashka-chat/backend
+    buildCommand: npm install
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://dashka.onrender.com
+
+  # ── Frontend ──────────────────────────────
+  - type: static
+    name: dashka
+    rootDir: dashka-chat/web
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://dashka-api.onrender.com
+         

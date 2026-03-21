@@ -15,8 +15,8 @@
   },
   "translation": {
     "default_source": "ru",     
-    "default_target": "pl",    
-    "supported_languages": ["ru", "pl", "en"],
+    "default_target": "en",    
+    "supported_languages": ["ru", "en"],
     "confidence_threshold": 0.8
   },
   "audio": {

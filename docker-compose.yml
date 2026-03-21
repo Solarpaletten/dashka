@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+
+  backend:
+    build:
+      context: ./dashka-chat/backend
+      dockerfile: Dockerfile
+    container_name: dashka-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - HOST=0.0.0.0
+    env_file:
+      - ./dashka-chat/backend/.env
+    volumes:
+      - ./dashka-chat/backend/uploads:/app/uploads
+      - ./dashka-chat/backend/cache:/app/cache
+      - ./dashka-chat/backend/logs:/app/logs
+      - backend-temp:/app/temp
+      - backend-tmp:/app/tmp
+    networks:
+      - dashka-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./dashka-chat/web
+      dockerfile: Dockerfile
+      args:
+        # 🔥 VITE_API_URL должен быть доступен из браузера пользователя
+        # В docker-compose локально — используем host machine IP
+        # На сервере — заменить на реальный домен (напр. https://dashka-api.onrender.com)
+        VITE_API_URL: http://localhost:8080
+    container_name: dashka-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - dashka-network
+
+volumes:
+  backend-temp:
+  backend-tmp:
+
+networks:
+  dashka-network:
+    driver: bridge
