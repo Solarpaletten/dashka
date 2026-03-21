@@ -1,3 +1,5 @@
+//useEnglishTranslator.ts
+
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { apiClient } from '../../core/network/apiClient'
 import {
@@ -24,7 +26,6 @@ export function useEnglishTranslator() {
   const bufferRef = useRef('')
   const lastTranslateTimeRef = useRef(0)
   const lastFinalRef = useRef('')
-  const isPartialInFlightRef = useRef(false)  // 🔥 v1.2.3 — блокировка параллельных запросов
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const mediaRecRef = useRef<MediaRecorder | null>(null)
@@ -77,12 +78,15 @@ export function useEnglishTranslator() {
   // direction в deps — пересоздаётся при смене направления
   const translatePartial = useCallback(async (text: string) => {
     if (!text.trim()) return
-    if (isPartialInFlightRef.current) return  // 🔥 v1.2.3 — не спамим параллельными запросами
-    const { targetLang } = DIRECTION_CONFIG[state.direction]
+    if (isPartialInFlightRef.current) return  // 🔥 v1.2.3
+    const { targetLang, sourceLang } = DIRECTION_CONFIG[state.direction]
     isPartialInFlightRef.current = true
     try {
       const res = await apiClient.translate(text, targetLang)
       set({ translatedText: res.translated_text })
+      // 🔥 v1.2.4 — озвучиваем ПЕРЕВОД (targetLang), не оригинал
+      const targetSpeechLang = sourceLang === 'ru-RU' ? 'en-US' : 'ru-RU'
+      speakOriginal(res.translated_text, targetSpeechLang)
     } catch {
     } finally {
       isPartialInFlightRef.current = false
@@ -94,8 +98,7 @@ export function useEnglishTranslator() {
 
     bufferRef.current = ''
     lastTranslateTimeRef.current = 0
-    lastFinalRef.current = ''
-    isPartialInFlightRef.current = false  // 🔥 v1.2.3
+    lastFinalRef.current = ''   // 👈 ДОБАВИТЬ
 
     setState(prev => ({
       ...prev,
@@ -112,8 +115,7 @@ export function useEnglishTranslator() {
     if (micState !== 'Recording') {
       bufferRef.current = ''
       lastTranslateTimeRef.current = 0
-      lastFinalRef.current = ''
-      isPartialInFlightRef.current = false  // 🔥 v1.2.3
+      lastFinalRef.current = ''   // 👈 ДОБАВИТЬ
     }
 
     if (micState === 'Recording') {
@@ -138,34 +140,36 @@ export function useEnglishTranslator() {
       recognition.interimResults = true
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let finalText = ''
+        // 🔥 v1.2.4 — читаем ТОЛЬКО новые результаты начиная с event.resultIndex
+        // event.results содержит ВСЮ историю — перебирать с 0 = дубли
+        let newFinalText = ''
         let interim = ''
 
-        for (let i = 0; i < event.results.length; i++) {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript
           if (event.results[i].isFinal) {
-            finalText += transcript + ' '
+            newFinalText += transcript + ' '
           } else {
             interim += transcript
           }
         }
 
-        const display = (finalText + interim).trim()
-        set({ inputText: display })
+        // UI: показываем весь накопленный финал + текущий interim
+        const allFinal = Array.from(event.results)
+          .filter(r => r.isFinal)
+          .map(r => r[0].transcript)
+          .join(' ')
+        set({ inputText: (allFinal + ' ' + interim).trim() })
 
-        // 🔥 v1.2.1 — мгновенное воспроизведение оригинала (только finalText)
-        const cleanFinal = finalText.trim().toLowerCase()
+        // TTS + buffer: только НОВЫЙ финальный текст
+        const cleanFinal = newFinalText.trim().toLowerCase()
 
         if (cleanFinal && cleanFinal !== lastFinalRef.current) {
-          const { sourceLang } = DIRECTION_CONFIG[state.direction]
-
-          speakOriginal(finalText.trim(), sourceLang)
-
-          bufferRef.current += ' ' + finalText
+          bufferRef.current += ' ' + newFinalText
           lastFinalRef.current = cleanFinal
         }
 
-        // 🔥 v1.2.1 — порог 8 символов / 600ms вместо 15 / 1000ms
+        // Перевод: отправляем буфер если достаточно текста и не в полёте
         const now = Date.now()
 
         if (
@@ -173,9 +177,7 @@ export function useEnglishTranslator() {
           now - lastTranslateTimeRef.current > 600
         ) {
           const textToTranslate = bufferRef.current.trim()
-
           translatePartial(textToTranslate)
-
           bufferRef.current = ''
           lastTranslateTimeRef.current = now
         }
