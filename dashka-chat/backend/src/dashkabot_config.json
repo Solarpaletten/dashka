@@ -1,0 +1,28 @@
+{
+  "app_name": "DashkaBot Voice Translator",
+  "version": "1.0.0",
+  "platform": "macOS",
+  "build_date": "2025-08-16T14:40+02:00",
+  "paths": {
+    "adb": "/usr/local/bin/adb",
+    "node": "/usr/local/bin/node",
+    "python": "/Users/asset/.pyenv/shims/python3"
+  },
+  "servers": {
+    "websocket_port": 8765,
+    "ai_server_port": 8080,
+    "api_endpoint": "http://localhost:8080"
+  },
+  "translation": {
+    "default_source": "ru",     
+    "default_target": "pl",    
+    "supported_languages": ["ru", "pl", "en"],
+    "confidence_threshold": 0.8
+  },
+  "audio": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "format": "wav",
+    "buffer_size": 1024
+  }
+}

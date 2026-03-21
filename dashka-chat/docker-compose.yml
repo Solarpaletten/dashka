@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Backend Service
+  # =============================================================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: dashka-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - HOST=0.0.0.0
+    env_file:
+      - backend/.env
+    volumes:
+      # Persistent data
+      - ./backend/uploads:/app/uploads
+      - ./backend/cache:/app/cache
+      - ./backend/logs:/app/logs
+      # Temporary files (cleared on restart)
+      - backend-temp:/app/temp
+      - backend-tmp:/app/tmp
+    networks:
+      - dashka-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # =============================================================================
+  # Frontend Service (optional - if using Docker for frontend too)
+  # =============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dashka-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+      - VITE_WS_URL=ws://localhost:8080/ws
+    depends_on:
+      - backend
+    networks:
+      - dashka-network
+
+  # =============================================================================
+  # Redis (optional - for distributed caching)
+  # =============================================================================
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: dashka-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - dashka-network
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+
+  # =============================================================================
+  # PostgreSQL (optional - for analytics/logging)
+  # =============================================================================
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: dashka-postgres
+  #   restart: unless-stopped
+  #   ports:
+  #     - "5432:5432"
+  #   environment:
+  #     - POSTGRES_DB=dashkabot
+  #     - POSTGRES_USER=dashkabot_user
+  #     - POSTGRES_PASSWORD=changeme
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   networks:
+  #     - dashka-network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U dashkabot_user"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  backend-temp:
+    driver: local
+  backend-tmp:
+    driver: local
+  # redis-data:
+  #   driver: local
+  # postgres-data:
+  #   driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  dashka-network:
+    driver: bridge
