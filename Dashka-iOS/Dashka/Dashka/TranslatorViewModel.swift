@@ -18,6 +18,7 @@ final class TranslatorViewModel: ObservableObject {
     @Published var backendAwake:   Bool     = false
     @Published var errorMessage:   String?  = nil
     @Published var isFrozen: Bool = false  // 👈 ДОБАВИТЬ (пункт 4.1 — состояние freeze результата)
+    @Published var didCopy: Bool = false
 
     // MARK: - Services
     private let service  = TranslatorService.shared
@@ -205,12 +206,23 @@ if errorMessage == nil {
     }
 
     func copyResult() {
-        UIPasteboard.general.string = translatedText
+    UIPasteboard.general.string = translatedText
+    didCopy = true
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        self.didCopy = false
+    }
     }
 
     func speak() {
-    guard !translatedText.isEmpty else { return }
+    guard !translatedText.isEmpty else {
+        print("🔇 EMPTY TEXT — nothing to speak")
+        return
+    }
+
+    print("🔊 SPEAK:", translatedText)
+    print("🔊 START SPEAK")
+
     SpeechSynthesizer.shared.speak(text: translatedText)
-    // 👈 ДОБАВИТЬ (voice — озвучка EN)
-   }
+}
 }

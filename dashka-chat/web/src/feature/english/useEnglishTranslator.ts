@@ -32,6 +32,20 @@ export function useEnglishTranslator() {
   const set = useCallback((partial: Partial<TranslatorState>) =>
     setState(prev => ({ ...prev, ...partial })), [])
 
+  // 🔥 v1.2.1 — TTS оригинала: cancel() только своей очереди, не трогает перевод
+  const speakOriginal = useCallback((text: string, lang: string) => {
+    if (!text.trim()) return
+
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel()
+    }
+    
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = lang
+    utterance.rate = 0.95
+    window.speechSynthesis.speak(utterance)
+  }, [])
+
   useEffect(() => { wakeUp() }, [])
 
   const wakeUp = useCallback(async () => {
@@ -65,20 +79,12 @@ export function useEnglishTranslator() {
     const { targetLang } = DIRECTION_CONFIG[state.direction]
     try {
       const res = await apiClient.translate(text, targetLang)
-      setState(prev => {
-        const nextText = (prev.translatedText + ' ' + res.translated_text).trim()
-        const limitedText = nextText.length > 1200 ? nextText.slice(-1200) : nextText
-
-        return {
-          ...prev,
-          translatedText: limitedText,
-        }
-      })
-
+      // 🔥 v1.2.1 — заменяем перевод, не копим "портянку"
+      set({ translatedText: res.translated_text })
     } catch {
     }
   }, [state.direction])
-  
+
 
   const toggleDirection = useCallback(() => {
 
@@ -97,7 +103,7 @@ export function useEnglishTranslator() {
 
   const toggleMic = useCallback(async () => {
     const { micState, direction } = state
-    
+
     if (micState !== 'Recording') {
       bufferRef.current = ''
       lastTranslateTimeRef.current = 0
@@ -141,20 +147,24 @@ export function useEnglishTranslator() {
         const display = (finalText + interim).trim()
         set({ inputText: display })
 
-        // 👉 BUFFER
+        // 🔥 v1.2.1 — мгновенное воспроизведение оригинала (только finalText)
         const cleanFinal = finalText.trim().toLowerCase()
 
         if (cleanFinal && cleanFinal !== lastFinalRef.current) {
+          const { sourceLang } = DIRECTION_CONFIG[state.direction]
+
+          speakOriginal(finalText.trim(), sourceLang)
+
           bufferRef.current += ' ' + finalText
           lastFinalRef.current = cleanFinal
         }
 
-        // 👉 НЕ СПАМИМ
+        // 🔥 v1.2.1 — порог 8 символов / 600ms вместо 15 / 1000ms
         const now = Date.now()
 
         if (
-          bufferRef.current.length > 15 &&
-          now - lastTranslateTimeRef.current > 1000
+          bufferRef.current.length > 8 &&
+          now - lastTranslateTimeRef.current > 600
         ) {
           const textToTranslate = bufferRef.current.trim()
 
@@ -218,7 +228,7 @@ export function useEnglishTranslator() {
   }, [state.micState])
 
   const toggleConversationMode = useCallback(() => {
-    
+
     setState(prev => ({
       ...prev,
       conversationMode: !prev.conversationMode,
@@ -229,7 +239,8 @@ export function useEnglishTranslator() {
   const clear = useCallback(() => {
     bufferRef.current = ''
     lastTranslateTimeRef.current = 0
-    lastFinalRef.current = ''   // 👈 ДОБАВИТЬ
+    lastFinalRef.current = ''
+    window.speechSynthesis.cancel()  // 🔥 v1.2.1 — сброс аудио при clear
     set({ inputText: '', translatedText: '', error: null })
   }, [])
 

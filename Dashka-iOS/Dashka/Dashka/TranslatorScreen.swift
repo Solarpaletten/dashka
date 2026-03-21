@@ -147,7 +147,7 @@ private struct InputBlock: View {
                 .font(.body)
                 .padding(.horizontal, 12)
                 .focused($isFocused)   // 👈 ДОБАВИТЬ (пункт 1 — управление клавиатурой)
-                .onChange(of: vm.inputText) { _ in
+                .onChange(of: vm.inputText) {
                 vm.isFrozen = false   // 👈 ДОБАВИТЬ (пункт 4.4 — разморозка при вводе)
                 isFocused = false
 }
@@ -257,7 +257,7 @@ if !vm.translatedText.isEmpty {
         Button {
             vm.copyResult()
         } label: {
-            Text("📋 Копировать")
+            Text(vm.didCopy ? "✅" : "📋 Копировать")
                 .font(.caption)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
