@@ -217,3 +217,5 @@ scratch/
 experiments/.env
 commit_message.txt
 *.md # если не нужны .md файлы
+.DS_Store
+*.xcuserstate
