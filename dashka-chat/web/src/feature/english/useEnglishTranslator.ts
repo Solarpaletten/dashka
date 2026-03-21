@@ -1,4 +1,4 @@
-//useEnglishTranslator.ts
+// dashka-chat/web/src/feature/english/useEnglishTranslator.ts
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { apiClient } from '../../core/network/apiClient'
