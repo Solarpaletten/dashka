@@ -29,6 +29,8 @@ export function useEnglishTranslator() {
   const lastFinalRef = useRef('')
   const isPartialInFlightRef = useRef(false)  // 🔥 v1.2.3
   const finalTextRef = useRef('')              // 🔥 v1.5.2
+  const lastSpokenRef = useRef('')
+  const lastSpokenTimeRef = useRef(0)
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const mediaRecRef = useRef<MediaRecorder | null>(null)
@@ -47,6 +49,8 @@ export function useEnglishTranslator() {
     utterance.lang = lang
     utterance.rate = 0.95
 
+    lastSpokenRef.current = text
+    lastSpokenTimeRef.current = Date.now()
     window.speechSynthesis.speak(utterance)
   }, [])
 
@@ -180,7 +184,16 @@ export function useEnglishTranslator() {
           return false
         }
 
+        
         const isLikelyTTS = (text: string) => {
+          const now = Date.now()
+        if (now - lastSpokenTimeRef.current > 2000) return false
+          const normalizedInput = text.toLowerCase()
+          const normalizedSpoken = lastSpokenRef.current.toLowerCase()
+          return normalizedInput.includes(normalizedSpoken.slice(0, 20))
+        }
+
+        
           return text.length < 20 && window.speechSynthesis.speaking
         }
 
