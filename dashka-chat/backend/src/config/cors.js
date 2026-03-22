@@ -1,40 +1,23 @@
 // backend/src/config/cors.js
-// v1.0.1 — P1 FIX: CORS origin '*' запрещён в production
-const logger = require('../utils/logger');
+// v1.2.4 — whitelist: localhost + onrender
 
-const PRODUCTION_DEFAULT_ORIGIN = 'https://dashka.onrender.com';
+const allowedOrigins = [
+  'http://localhost',
+  'http://localhost:80',
+  'http://localhost:5173',
+  'https://dashka.onrender.com',
+]
 
-function buildCorsOrigin() {
-  const env = process.env.NODE_ENV || 'development';
-  const envOrigin = process.env.CORS_ORIGIN;
-
-  if (env !== 'production') {
-    // Development: разрешаем всё
-    return '*';
-  }
-
-  // Production: никогда не '*'
-  if (!envOrigin || envOrigin === '*') {
-    logger.warn(
-      `[CORS] CORS_ORIGIN не задан или равен '*' в production. ` +
-      `Используется безопасный дефолт: ${PRODUCTION_DEFAULT_ORIGIN}`
-    );
-    return PRODUCTION_DEFAULT_ORIGIN;
-  }
-
-  // Поддержка списка доменов через запятую: "https://a.com,https://b.com"
-  const origins = envOrigin.split(',').map(o => o.trim()).filter(Boolean);
-  if (origins.length === 1) return origins[0];
-
-  logger.info(`[CORS] Разрешённые origins: ${origins.join(', ')}`);
-  return origins;
-}
-
-const corsOptions = {
-  origin: buildCorsOrigin(),
+module.exports = {
+  origin: function (origin, callback) {
+    // allow requests with no origin (curl, mobile, server-to-server)
+    if (!origin) return callback(null, true)
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true)
+    }
+    return callback(new Error('Not allowed by CORS'))
+  },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-};
-
-module.exports = corsOptions;
+  credentials: true,
+}
