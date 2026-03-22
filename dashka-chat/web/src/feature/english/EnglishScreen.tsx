@@ -252,18 +252,17 @@ const EnglishScreen: React.FC = () => {
               <span>{directionConfig.flag_to}</span>
               {directionConfig.target}
             </span>
-            {translatedText &&
-             
-              <button onClick={() => {
-                window.speechSynthesis.cancel()
-                const u = new SpeechSynthesisUtterance(translatedText)
-                u.lang = direction === 'RU_EN' ? 'en-US' : 'ru-RU'
-                window.speechSynthesis.speak(u)
-              }}>
-                🔊
-              </button>
             
-            (
+            <button onClick={() => {
+              window.speechSynthesis.cancel()
+              const u = new SpeechSynthesisUtterance(translatedText)
+              u.lang = direction === 'RU_EN' ? 'en-US' : 'ru-RU'
+              window.speechSynthesis.speak(u)
+            }}>
+              🔊
+            </button>
+
+            {translatedText && (
               
               <button
                 onClick={copyResult}
