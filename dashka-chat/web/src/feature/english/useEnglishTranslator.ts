@@ -111,6 +111,8 @@ export function useEnglishTranslator() {
 
   const toggleDirection = useCallback(() => {
 
+    // 🔥 RESET STATE ON LANGUAGE SWITCH
+    finalTextRef.current = ''
     bufferRef.current = ''
     translatedBufferRef.current = ''
     lastTranslateTimeRef.current = 0
@@ -130,6 +132,8 @@ export function useEnglishTranslator() {
 
     if (micState === 'Idle') {
       window.speechSynthesis.cancel() //task1 cancel
+
+      finalTextRef.current = '' 
       bufferRef.current = ''
       translatedBufferRef.current = ''
       lastTranslateTimeRef.current = 0
@@ -161,6 +165,12 @@ export function useEnglishTranslator() {
       recognition.interimResults = true
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
+
+        // 🔥 smarter TTS filter (не блокируем всё)
+        const isLikelyTTS = (text: string) => {
+          return text.length < 20 && window.speechSynthesis.speaking
+        }
+
         // 🔥 v1.5.2 — finalTextRef = единый источник истины
         // interim = только display, не мутирует финал
         let interim = ''
@@ -168,6 +178,12 @@ export function useEnglishTranslator() {
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript
+
+          // 🔥 фильтр только коротких TTS фраз
+          if (isLikelyTTS(transcript)) {
+            continue
+          }
+
           if (event.results[i].isFinal) {
             newFinalText += transcript
           } else {
@@ -176,9 +192,10 @@ export function useEnglishTranslator() {
         }
 
         const cleanFinal = newFinalText.trim()
-        const isNewFinal = cleanFinal && !finalTextRef.current.includes(cleanFinal)
+        const isNewFinal = cleanFinal && cleanFinal !== lastFinalRef.current
 
         if (isNewFinal) {
+          lastFinalRef.current = cleanFinal
           finalTextRef.current = (finalTextRef.current + ' ' + cleanFinal).trim()
         }
 
