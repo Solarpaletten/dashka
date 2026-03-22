@@ -65,10 +65,10 @@ export function useEnglishTranslator() {
   const translate = useCallback(async (textOverride?: string) => {
     const text = (textOverride ?? state.inputText).trim()
     if (!text) return
-    const { targetLang } = DIRECTION_CONFIG[state.direction]
+    const { targetLang, sourceLangCode } = DIRECTION_CONFIG[state.direction]
     set({ isTranslating: true, error: null })
     try {
-      const res = await apiClient.translate(text, targetLang)
+      const res = await apiClient.translate(text, targetLang, sourceLangCode)
       
       translatedBufferRef.current = res.translated_text
 
@@ -88,10 +88,10 @@ export function useEnglishTranslator() {
   const translatePartial = useCallback(async (text: string) => {
     if (!text.trim()) return
     if (isPartialInFlightRef.current) return  
-    const { targetLang, sourceLang } = DIRECTION_CONFIG[state.direction]
+    const { targetLang, sourceLangCode } = DIRECTION_CONFIG[state.direction]
     isPartialInFlightRef.current = true
     try {
-      const res = await apiClient.translate(text, targetLang)
+      const res = await apiClient.translate(text, targetLang, sourceLangCode)
       
       translatedBufferRef.current += (translatedBufferRef.current ? ' ' : '') + res.translated_text 
 
