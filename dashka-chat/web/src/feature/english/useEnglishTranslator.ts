@@ -187,14 +187,12 @@ export function useEnglishTranslator() {
         
         const isLikelyTTS = (text: string) => {
           const now = Date.now()
-        if (now - lastSpokenTimeRef.current > 2000) return false
+          if (now - lastSpokenTimeRef.current > 2000) return false
+
           const normalizedInput = text.toLowerCase()
           const normalizedSpoken = lastSpokenRef.current.toLowerCase()
-          return normalizedInput.includes(normalizedSpoken.slice(0, 20))
-        }
 
-        
-          return text.length < 20 && window.speechSynthesis.speaking
+          return normalizedInput.includes(normalizedSpoken.slice(0, 20))
         }
 
         let interim = ''
@@ -203,8 +201,10 @@ export function useEnglishTranslator() {
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript
 
-          if (isWrongLanguage(transcript)) continue
+          
           if (isLikelyTTS(transcript)) continue
+          if (isWrongLanguage(transcript)) continue
+
 
           if (event.results[i].isFinal) {
             newFinalText += transcript
