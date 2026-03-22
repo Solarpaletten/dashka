@@ -27,7 +27,7 @@ router.post('/translate',
 
       // source_language НЕ имеет дефолта — если не передан, будет undefined
       // translateText сам определит язык через GPT
-      const sourceCode = (source_language || fromLang || from || '').toUpperCase() || null;
+      const sourceCode = (source_language || fromLang || from || 'RU').toUpperCase(); // 1 task RU
       const targetCode = (target_language || toLang || to || 'EN').toUpperCase();
 
       // Кэш только если source известен
@@ -53,7 +53,7 @@ router.post('/translate',
         status: 'success',
         original_text: result.originalText,
         translated_text: result.translatedText,
-        source_language: (result.fromLanguage || sourceCode || 'auto').toLowerCase(),
+        source_language: sourceCode.toLowerCase(), // 2 task source Code
         target_language: targetCode.toLowerCase(),
         confidence: result.confidence,
         timestamp: new Date().toISOString(),

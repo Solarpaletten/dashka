@@ -21,9 +21,9 @@ router.post('/voice-translate', upload.single('audio'), async (req, res, next) =
 
     const {
       fromLang = 'RU',
-      toLang = 'DE',
+      toLang = 'EN',
       source_language = 'RU',
-      target_language = 'DE'
+      target_language = 'EN'
     } = req.body;
 
     const sourceCode = (fromLang || source_language).toUpperCase();
