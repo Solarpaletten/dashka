@@ -23,7 +23,8 @@ const INITIAL: TranslatorState = {
 export function useEnglishTranslator() {
   const [state, setState] = useState<TranslatorState>(INITIAL)
 
-  const bufferRef = useRef('')
+  const bufferRef = useRef('') // 4 task
+  const translatedBufferRef = useRef('')
   const lastTranslateTimeRef = useRef(0)
   const lastFinalRef = useRef('')
   const isPartialInFlightRef = useRef(false)  // 🔥 v1.2.3
@@ -39,9 +40,7 @@ export function useEnglishTranslator() {
   const speakOriginal = useCallback((text: string, lang: string) => {
     if (!text.trim()) return
 
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel()
-    }
+    if (window.speechSynthesis.speaking) return // 2 task speaking return
     
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = lang
@@ -68,7 +67,14 @@ export function useEnglishTranslator() {
     set({ isTranslating: true, error: null })
     try {
       const res = await apiClient.translate(text, targetLang)
-      set({ translatedText: res.translated_text, backendAwake: true })
+      
+      translatedBufferRef.current = res.translated_text
+
+      set({
+        translatedText: translatedBufferRef.current,
+        backendAwake: true
+      })
+
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Ошибка перевода' })
     } finally {
@@ -84,7 +90,11 @@ export function useEnglishTranslator() {
     isPartialInFlightRef.current = true
     try {
       const res = await apiClient.translate(text, targetLang)
-      set({ translatedText: res.translated_text })
+      
+      translatedBufferRef.current += (translatedBufferRef.current ? ' ' : '') + res.translated_text // 1 task
+
+      set({ translatedText: translatedBufferRef.current }) 
+
       // 🔥 v1.2.4 — озвучиваем ПЕРЕВОД (targetLang), не оригинал
       const targetSpeechLang = targetLang === 'EN' ? 'en-US' : 'ru-RU'
       speakOriginal(res.translated_text, targetSpeechLang)
@@ -98,8 +108,9 @@ export function useEnglishTranslator() {
   const toggleDirection = useCallback(() => {
 
     bufferRef.current = ''
+    translatedBufferRef.current = ''
     lastTranslateTimeRef.current = 0
-    lastFinalRef.current = ''   // 👈 ДОБАВИТЬ
+    lastFinalRef.current = ''
 
     setState(prev => ({
       ...prev,
@@ -166,7 +177,6 @@ export function useEnglishTranslator() {
         const cleanFinal = newFinalText.trim().toLowerCase()
 
         if (cleanFinal && cleanFinal !== lastFinalRef.current) {
-          bufferRef.current += ' ' + newFinalText
           lastFinalRef.current = cleanFinal
         }
 
@@ -174,15 +184,19 @@ export function useEnglishTranslator() {
         const now = Date.now()
 
         if (
-          bufferRef.current.length > 8 &&
+          newFinalText.trim().length > 2 &&
           now - lastTranslateTimeRef.current > 600
         ) {
-          const textToTranslate = bufferRef.current.trim()
-          translatePartial(textToTranslate)
-          bufferRef.current = ''
+          const newChunk = newFinalText.trim()
+
+          if (newChunk) {
+            translatePartial(newChunk)
+          }
+
           lastTranslateTimeRef.current = now
         }
-      }
+
+      } // 1 task length > 2 && 
 
       recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
         if (e.error === 'no-speech') return
@@ -245,12 +259,21 @@ export function useEnglishTranslator() {
 
   }, [])
 
+  
+
   const clear = useCallback(() => {
     bufferRef.current = ''
+    translatedBufferRef.current = '' 
     lastTranslateTimeRef.current = 0
     lastFinalRef.current = ''
-    window.speechSynthesis.cancel()  // 🔥 v1.2.1 — сброс аудио при clear
-    set({ inputText: '', translatedText: '', error: null })
+
+    window.speechSynthesis.cancel()
+
+    set({
+      inputText: '',
+      translatedText: '',
+      error: null
+    })
   }, [])
 
   const setInputText = useCallback((text: string) => {
