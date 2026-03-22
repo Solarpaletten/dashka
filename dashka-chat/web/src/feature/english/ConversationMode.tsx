@@ -144,7 +144,7 @@ const ConversationMode: React.FC<Props> = ({
       <div className="shrink-0 flex justify-center items-center py-5 border-t border-white/10 bg-gray-950/80 backdrop-blur">
         <button
           onClick={onToggleMic}
-          disabled={isProcessing}
+          
           aria-label={isRecording ? 'Остановить Recording...' : 'Начать Processing...'}
           className={`
             relative w-20 h-20 rounded-full font-bold text-3xl

@@ -199,7 +199,7 @@ const EnglishScreen: React.FC = () => {
           {/* Mic button — MicState machine */}
           <button
             onClick={toggleMic}
-            disabled={isProcessing}
+            
             className={`
               relative h-12 w-14 rounded-2xl font-bold text-lg
               active:scale-95 transition-all duration-150 shadow-md
