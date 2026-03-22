@@ -1,4 +1,4 @@
-// dashka-chat/web/src/feature/english/useEnglishTranslator.ts
+//dashka-chat/web/src/feature/english/useEnglishTranslator.ts
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { apiClient } from '../../core/network/apiClient'
@@ -26,6 +26,7 @@ export function useEnglishTranslator() {
   const bufferRef = useRef('')
   const lastTranslateTimeRef = useRef(0)
   const lastFinalRef = useRef('')
+  const isPartialInFlightRef = useRef(false)  // 🔥 v1.2.3
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const mediaRecRef = useRef<MediaRecorder | null>(null)
@@ -85,7 +86,7 @@ export function useEnglishTranslator() {
       const res = await apiClient.translate(text, targetLang)
       set({ translatedText: res.translated_text })
       // 🔥 v1.2.4 — озвучиваем ПЕРЕВОД (targetLang), не оригинал
-      const targetSpeechLang = sourceLang === 'ru-RU' ? 'en-US' : 'ru-RU'
+      const targetSpeechLang = targetLang === 'EN' ? 'en-US' : 'ru-RU'
       speakOriginal(res.translated_text, targetSpeechLang)
     } catch {
     } finally {
