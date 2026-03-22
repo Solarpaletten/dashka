@@ -90,7 +90,7 @@ class UnifiedTranslationService {
 
     if (!fromLanguage) {
       throw new Error('Source language is required');
-    }
+    }                                                     // task 4 no auto
 
     if (fromLanguage && fromLanguage === toLanguage) {
       return {
@@ -205,7 +205,6 @@ class UnifiedTranslationService {
     return { language: 'EN', confidence: 0.5, provider: 'fallback' };
   }
 
-  return { language: 'RU', confidence: 1.0 };
 
   getStats() {
     return {
