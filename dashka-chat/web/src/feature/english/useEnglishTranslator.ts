@@ -129,6 +129,7 @@ export function useEnglishTranslator() {
     const { micState, direction } = state
 
     if (micState === 'Idle') {
+      window.speechSynthesis.cancel() //task1 cancel
       bufferRef.current = ''
       translatedBufferRef.current = ''
       lastTranslateTimeRef.current = 0
