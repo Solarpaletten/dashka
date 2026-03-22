@@ -131,7 +131,6 @@ export function useEnglishTranslator() {
     if (micState === 'Idle') {
       bufferRef.current = ''
       translatedBufferRef.current = ''
-      finalTextRef.current = ''
       lastTranslateTimeRef.current = 0
       lastFinalRef.current = ''
       isPartialInFlightRef.current = false
