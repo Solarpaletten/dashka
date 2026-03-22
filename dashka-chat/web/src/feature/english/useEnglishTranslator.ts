@@ -164,9 +164,8 @@ export function useEnglishTranslator() {
       recognition.continuous = true
       recognition.interimResults = true
 
+      
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        // 🔥 v1.2.4 — читаем ТОЛЬКО новые результаты начиная с event.resultIndex
-        // event.results содержит ВСЮ историю — перебирать с 0 = дубли
         let newFinalText = ''
         let interim = ''
 
@@ -190,11 +189,36 @@ export function useEnglishTranslator() {
           return { ...prev, inputText: (base + ' ' + interim).trim() }
         })
 
-        // TTS + buffer: только НОВЫЙ финальный текст
+        // 🔥 v1.5.1 — финал добавляем только если новый (через lastFinalRef)
+        // interim показываем поверх последнего финального
         const cleanFinal = newFinalText.trim().toLowerCase()
+        const isNewFinal = cleanFinal && cleanFinal !== lastFinalRef.current
 
-        if (cleanFinal && cleanFinal !== lastFinalRef.current) {
+        if (isNewFinal) {
           lastFinalRef.current = cleanFinal
+          setState(prev => ({
+            ...prev,
+            inputText: (prev.inputText + ' ' + newFinalText).trim()
+          }))
+        } else if (interim) {
+          setState(prev => {
+            // убираем предыдущий interim (всё после последнего финального слова)
+            const withoutPrevInterim = lastFinalRef.current
+              ? prev.inputText
+              : prev.inputText
+            return { ...prev, inputText: (withoutPrevInterim + ' ' + interim).trim() }
+          })
+        }
+
+        // buffer + перевод только для нового финального
+        if (isNewFinal) {
+          const now = Date.now()
+          if (newFinalText.trim().length > 2 && now - lastTranslateTimeRef.current > 600) {
+            const newChunk = newFinalText.trim()
+            bufferRef.current += (bufferRef.current ? ' ' : '') + newChunk
+            translatePartial(newChunk)
+            lastTranslateTimeRef.current = now
+          }
         }
 
         // Перевод: отправляем буфер если достаточно текста и не в полёте
