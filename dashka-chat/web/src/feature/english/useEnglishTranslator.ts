@@ -30,6 +30,8 @@ export function useEnglishTranslator() {
   const isPartialInFlightRef = useRef(false)  // 🔥 v1.2.3
   const finalTextRef = useRef('')              // 🔥 v1.5.2
   const lastSpokenRef = useRef('')
+  const silenceTimerRef = useRef<number | null>(null)
+  const lastSpeechTimeRef = useRef(0)
   const lastSpokenTimeRef = useRef(0)
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -88,29 +90,44 @@ export function useEnglishTranslator() {
     }
   }, [state.direction])
 
-  // direction в deps — пересоздаётся при смене направления
-  const translatePartial = useCallback(async (text: string) => {
-    if (!text.trim()) return
-    if (isPartialInFlightRef.current) return  
+  const handleSpeechEnd = useCallback(async () => {
+    const text = finalTextRef.current.trim()
+    if (!text) return
+
+    const recognition = recognitionRef.current
+    if (!recognition) return
+
+    // маленькая задержка чтобы не обрезать конец
+    await new Promise(r => setTimeout(r, 250))
+
+    recognition.stop()
+
     const { targetLang, sourceLangCode } = DIRECTION_CONFIG[state.direction]
-    isPartialInFlightRef.current = true
+
     try {
       const res = await apiClient.translate(text, targetLang, sourceLangCode)
-      
-      translatedBufferRef.current += (translatedBufferRef.current ? ' ' : '') + res.translated_text 
 
-      set({ translatedText: translatedBufferRef.current }) 
+      translatedBufferRef.current = res.translated_text
+      set({ translatedText: res.translated_text })
 
-      // 🔥 v1.2.4 — озвучиваем ПЕРЕВОД (targetLang), не оригинал
-      if (state.micState !== 'Recording') {
-        const targetSpeechLang = targetLang === 'EN' ? 'en-US' : 'ru-RU'
-        speakOriginal(res.translated_text, targetSpeechLang)
-      }
-    } catch {
-    } finally {
-      isPartialInFlightRef.current = false
-    }
-  }, [state.direction])
+      const lang = targetLang === 'EN' ? 'en-US' : 'ru-RU'
+      speakOriginal(res.translated_text, lang)
+
+      const wait = setInterval(() => {
+        if (!window.speechSynthesis.speaking) {
+          clearInterval(wait)
+
+          finalTextRef.current = ''
+          lastFinalRef.current = ''
+
+          setTimeout(() => {
+            recognitionRef.current?.start()
+          }, 200)
+        }
+      }, 100)
+
+    } catch { }
+  }, [state.direction, speakOriginal])
 
 
   const toggleDirection = useCallback(() => {
@@ -170,6 +187,17 @@ export function useEnglishTranslator() {
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
 
+        // 🔥 pause detection (НЕ трогаем остальной код)
+        lastSpeechTimeRef.current = Date.now()
+
+        if (silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current)
+        }
+
+        silenceTimerRef.current = window.setTimeout(() => {
+          handleSpeechEnd()
+        }, 1300) 
+
         const isWrongLanguage = (text: string) => {
           const { sourceLang } = DIRECTION_CONFIG[state.direction]
 
@@ -224,14 +252,6 @@ export function useEnglishTranslator() {
         const display = (finalTextRef.current + (interim ? ' ' + interim.trim() : '')).trim()
         set({ inputText: display })
 
-        if (isNewFinal && cleanFinal.length > 2) {
-          const now = Date.now()
-          if (now - lastTranslateTimeRef.current > 300) {
-            bufferRef.current += (bufferRef.current ? ' ' : '') + cleanFinal
-            translatePartial(cleanFinal)
-            lastTranslateTimeRef.current = now
-          }
-        }
       }
 
       recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
