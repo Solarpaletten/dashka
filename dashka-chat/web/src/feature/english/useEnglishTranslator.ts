@@ -179,12 +179,16 @@ export function useEnglishTranslator() {
           }
         }
 
-        // UI: показываем весь накопленный финал + текущий interim
-        const allFinal = Array.from(event.results)
-          .filter(r => r.isFinal)
-          .map(r => r[0].transcript)
-          .join(' ')
-        set({ inputText: (allFinal + ' ' + interim).trim() })
+        // 🔥 v1.5 — inputText накапливаем через state, не через allFinal
+        // allFinal читал всю историю включая предыдущие сессии
+        setState(prev => {
+          const base = newFinalText.trim()
+            ? (prev.inputText.endsWith(newFinalText.trim())
+              ? prev.inputText
+              : (prev.inputText + ' ' + newFinalText).trim())
+            : prev.inputText
+          return { ...prev, inputText: (base + ' ' + interim).trim() }
+        })
 
         // TTS + buffer: только НОВЫЙ финальный текст
         const cleanFinal = newFinalText.trim().toLowerCase()
