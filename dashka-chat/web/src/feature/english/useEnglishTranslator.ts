@@ -100,7 +100,8 @@ export function useEnglishTranslator() {
       set({ translatedText: translatedBufferRef.current }) 
 
       // 🔥 v1.2.4 — озвучиваем ПЕРЕВОД (targetLang), не оригинал
-      
+
+      if (state.micState !== 'Recording') {
       const targetSpeechLang = targetLang === 'EN' ? 'en-US' : 'ru-RU'
       speakOriginal(res.translated_text, targetSpeechLang)
     } catch {
