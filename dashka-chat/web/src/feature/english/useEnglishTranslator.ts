@@ -66,9 +66,10 @@ export function useEnglishTranslator() {
   const translate = useCallback(async (textOverride?: string) => {
     const text = (textOverride ?? state.inputText).trim()
     if (!text) return
-    const { targetLang } = DIRECTION_CONFIG[state.direction]
+    const { targetLang, sourceLang } = DIRECTION_CONFIG[state.direction]
     set({ isTranslating: true, error: null })
     try {
+      const { targetLang, sourceLang } = DIRECTION_CONFIG[state.direction]
 
       const res = await apiClient.translate(text, targetLang, sourceLang)  // task1 translate sourceLang
       
