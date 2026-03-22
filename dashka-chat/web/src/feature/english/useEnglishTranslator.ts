@@ -41,7 +41,7 @@ export function useEnglishTranslator() {
   const speakOriginal = useCallback((text: string, lang: string) => {
     if (!text.trim()) return
 
-    if (window.speechSynthesis.speaking) return // 2 task speaking return
+    if (window.speechSynthesis.speaking) return 
 
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = lang
@@ -166,23 +166,32 @@ export function useEnglishTranslator() {
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
 
-        // 🔥 smarter TTS filter (не блокируем всё)
+        const isWrongLanguage = (text: string) => {
+          const { sourceLang } = DIRECTION_CONFIG[state.direction]
+
+          if (sourceLang === 'ru-RU') {
+            return /[a-zA-Z]/.test(text)
+          }
+
+          if (sourceLang === 'en-US') {
+            return /[а-яА-Я]/.test(text)
+          }
+
+          return false
+        }
+
         const isLikelyTTS = (text: string) => {
           return text.length < 20 && window.speechSynthesis.speaking
         }
 
-        // 🔥 v1.5.2 — finalTextRef = единый источник истины
-        // interim = только display, не мутирует финал
         let interim = ''
         let newFinalText = ''
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript
 
-          // 🔥 фильтр только коротких TTS фраз
-          if (isLikelyTTS(transcript)) {
-            continue
-          }
+          if (isWrongLanguage(transcript)) continue
+          if (isLikelyTTS(transcript)) continue
 
           if (event.results[i].isFinal) {
             newFinalText += transcript
@@ -199,21 +208,18 @@ export function useEnglishTranslator() {
           finalTextRef.current = (finalTextRef.current + ' ' + cleanFinal).trim()
         }
 
-        // UI = финал + interim (read-only display)
         const display = (finalTextRef.current + (interim ? ' ' + interim.trim() : '')).trim()
         set({ inputText: display })
 
-        // перевод только для нового финального куска
         if (isNewFinal && cleanFinal.length > 2) {
           const now = Date.now()
-          if (now - lastTranslateTimeRef.current > 600) {
+          if (now - lastTranslateTimeRef.current > 300) {
             bufferRef.current += (bufferRef.current ? ' ' : '') + cleanFinal
             translatePartial(cleanFinal)
             lastTranslateTimeRef.current = now
           }
         }
-
-      } 
+      }
 
       recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
         if (e.error === 'no-speech') return
