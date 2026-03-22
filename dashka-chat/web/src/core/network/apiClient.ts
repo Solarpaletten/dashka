@@ -1,14 +1,12 @@
 // core/network/apiClient.ts
-// v1.2 — targetLang now a parameter (supports RU_DE | DE_RU)
+// v1.5 — sourceLang parameter added, default EN
 // API contract unchanged — snake_case, same endpoints
 
 import type { TranslateResponse, HealthResponse } from '../types/translator.types'
-
 const BASE_URL = import.meta.env.VITE_API_URL || 'https://dashka-api.onrender.com'
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    // Try to extract server message
     const text = await res.text().catch(() => '')
     let message = `HTTP ${res.status}`
     try {
@@ -21,7 +19,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export const apiClient = {
-
   wakeUp: async (): Promise<HealthResponse> => {
     const res = await fetch(`${BASE_URL}/health`, {
       method: 'GET',
@@ -31,14 +28,15 @@ export const apiClient = {
   },
 
   // ── Text translate ─────────────────────────────────────────
-  // targetLang: 'DE' | 'RU' (driven by direction in hook)
-  translate: async (text: string, targetLang = 'DE'): Promise<TranslateResponse> => {
+  // 🔥 v1.5 — sourceLang передаётся для корректного EN→RU перевода
+  translate: async (text: string, targetLang = 'EN', sourceLang?: string): Promise<TranslateResponse> => {
     const res = await fetch(`${BASE_URL}/translate`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
         text:            text.trim(),
-        target_language: targetLang   // ← v1.2: direction-aware
+        target_language: targetLang,
+        ...(sourceLang && { source_language: sourceLang }),
       }),
       signal: AbortSignal.timeout(30_000)
     })
@@ -46,7 +44,7 @@ export const apiClient = {
   },
 
   // ── Voice translate ────────────────────────────────────────
-  voiceTranslate: async (audioBlob: Blob, targetLang = 'DE'): Promise<TranslateResponse> => {
+  voiceTranslate: async (audioBlob: Blob, targetLang = 'EN'): Promise<TranslateResponse> => {
     const form = new FormData()
     form.append('audio', audioBlob, 'recording.wav')
     form.append('target_language', targetLang)
