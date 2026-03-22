@@ -80,13 +80,18 @@ class UnifiedTranslationService {
 
     const startTime = Date.now();
 
-    const resolvedSource = fromLanguage || 'AUTO';
+    const resolvedSource = fromLanguage || 'RU'; // task1 no auto
 
     if (!this.supportedLanguages[toLanguage]) {
       throw new Error(`Unsupported target language: ${toLanguage}`);
     }
 
     // same-language только если оба известны И совпадают
+
+    if (!fromLanguage) {
+      throw new Error('Source language is required');
+    }
+
     if (fromLanguage && fromLanguage === toLanguage) {
       return {
         originalText: text,
@@ -99,9 +104,8 @@ class UnifiedTranslationService {
       };
     }
 
-    const fromName = resolvedSource !== 'AUTO'
-      ? this.supportedLanguages[resolvedSource].name
-      : 'the source language';
+    const fromName = this.supportedLanguages[resolvedSource].name; //task2 no auto
+
     const toName = this.supportedLanguages[toLanguage].name;
 
     logger.info(`[translate] ${resolvedSource} → ${toLanguage} | chars: ${text.length}`);
@@ -200,6 +204,8 @@ class UnifiedTranslationService {
     if (code) return { language: code, confidence: 0.95, provider: 'openai-detection' };
     return { language: 'EN', confidence: 0.5, provider: 'fallback' };
   }
+
+  return { language: 'RU', confidence: 1.0 };
 
   getStats() {
     return {
