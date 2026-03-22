@@ -10,7 +10,8 @@ export const DIRECTION_CONFIG: Record<Direction, {
   source: string
   target: string
   label: string
-  sourceLang: string   // for SpeechRecognition.lang
+  sourceLang: string  
+  sourceLangCode: string
   targetLang: string   // for /translate target_language
   flag_from: string
   flag_to: string
