@@ -178,17 +178,6 @@ export function useEnglishTranslator() {
           }
         }
 
-        // 🔥 v1.5 — inputText накапливаем через state, не через allFinal
-        // allFinal читал всю историю включая предыдущие сессии
-        setState(prev => {
-          const base = newFinalText.trim()
-            ? (prev.inputText.endsWith(newFinalText.trim())
-              ? prev.inputText
-              : (prev.inputText + ' ' + newFinalText).trim())
-            : prev.inputText
-          return { ...prev, inputText: (base + ' ' + interim).trim() }
-        })
-
         // 🔥 v1.5.1 — финал добавляем только если новый (через lastFinalRef)
         // interim показываем поверх последнего финального
         const cleanFinal = newFinalText.trim().toLowerCase()
