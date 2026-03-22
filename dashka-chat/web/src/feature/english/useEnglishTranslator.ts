@@ -1,5 +1,7 @@
 //dashka-chat/web/src/feature/english/useEnglishTranslator.ts
 
+
+
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { apiClient } from '../../core/network/apiClient'
 import {
@@ -40,12 +42,13 @@ export function useEnglishTranslator() {
   const speakOriginal = useCallback((text: string, lang: string) => {
     if (!text.trim()) return
 
-    if (window.speechSynthesis.speaking) return // 2 task speaking return
-    
+    window.speechSynthesis.cancel()
+
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = lang
     utterance.rate = 0.95
-    window.speechSynthesis.speak(utterance)
+
+    window.speechSynthesis.speak(utterance) // task3 fix TTS
   }, [])
 
   useEffect(() => { wakeUp() }, [])
@@ -66,7 +69,9 @@ export function useEnglishTranslator() {
     const { targetLang } = DIRECTION_CONFIG[state.direction]
     set({ isTranslating: true, error: null })
     try {
-      const res = await apiClient.translate(text, targetLang)
+      const { targetLang, sourceLang } = DIRECTION_CONFIG[state.direction]
+
+      const res = await apiClient.translate(text, targetLang, sourceLang)  // task1 translate sourceLang
       
       translatedBufferRef.current = res.translated_text
 
@@ -89,7 +94,9 @@ export function useEnglishTranslator() {
     const { targetLang, sourceLang } = DIRECTION_CONFIG[state.direction]
     isPartialInFlightRef.current = true
     try {
-      const res = await apiClient.translate(text, targetLang)
+      const { targetLang, sourceLang } = DIRECTION_CONFIG[state.direction]
+
+      const res = await apiClient.translate(text, targetLang, sourceLang) // task1 translatePartial sourceLang
       
       translatedBufferRef.current += (translatedBufferRef.current ? ' ' : '') + res.translated_text // 1 task
 
@@ -124,7 +131,7 @@ export function useEnglishTranslator() {
   const toggleMic = useCallback(async () => {
     const { micState, direction } = state
 
-    if (micState !== 'Recording') {
+    if (micState !== 'Recording') { //task 6 здесь заменить на if (micState === 'Idle') ????
       bufferRef.current = ''
       lastTranslateTimeRef.current = 0
       lastFinalRef.current = ''   // 👈 ДОБАВИТЬ
@@ -132,10 +139,14 @@ export function useEnglishTranslator() {
 
     if (micState === 'Recording') {
       recognitionRef.current?.stop()
+      recognitionRef.current = null
+
       mediaRecRef.current?.stop()
-      set({ micState: 'Processing' })
+
+      set({ micState: 'Idle' }) // 🔥 сразу Idle
+
       return
-    }
+    }                                  // task5 toggleMic 
 
 
     if (micState === 'Processing') return
@@ -188,6 +199,8 @@ export function useEnglishTranslator() {
           now - lastTranslateTimeRef.current > 600
         ) {
           const newChunk = newFinalText.trim()
+
+          bufferRef.current += (bufferRef.current ? ' ' : '') + newChunk // task2 add bufferRef.current +=
 
           if (newChunk) {
             translatePartial(newChunk)
@@ -244,11 +257,7 @@ export function useEnglishTranslator() {
     }
   }, [state.micState, state.direction, state.inputText])
 
-  useEffect(() => {
-    if (state.micState === 'Processing' && recognitionRef.current) {
-      translate(state.inputText).finally(() => set({ micState: 'Idle' }))
-    }
-  }, [state.micState])
+  // task4 delete f (state.micState === 'Processing'
 
   const toggleConversationMode = useCallback(() => {
 

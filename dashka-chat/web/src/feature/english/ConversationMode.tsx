@@ -1,5 +1,5 @@
 // feature/german/ConversationMode.tsx
-// v1.2 — Full-screen conversation view
+// v1.2 → v1.5 — Full-screen conversation view
 //
 // Design:
 //   • Split screen: top = speaker A (source), bottom = speaker B (translation)
@@ -140,7 +140,7 @@ const ConversationMode: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* ── Bottom mic bar ───────────────────────────────────── */}
+      {/* ── Bottom mic bar ─────────────────────────────────────task7 button bg-red-600 */}
       <div className="shrink-0 flex justify-center items-center py-5 border-t border-white/10 bg-gray-950/80 backdrop-blur">
         <button
           onClick={onToggleMic}
@@ -150,10 +150,12 @@ const ConversationMode: React.FC<Props> = ({
             relative w-20 h-20 rounded-full font-bold text-3xl
             transition-all duration-200 active:scale-95
             disabled:opacity-50 disabled:cursor-not-allowed
+
             ${isRecording
-              ? 'bg-red-600 shadow-[0_0_0_0_rgba(239,68,68,1)] animate-[mic-pulse_1.2s_ease-out_infinite]'
-              : 'bg-white/10 hover:bg-white/20 border border-white/20'
+            ? 'bg-yellow-400 hover:bg-yellow-300 text-black'
+            : 'bg-gray-800 hover:bg-gray-700 text-white'
             }
+
           `}
         >
           {isProcessing ? (

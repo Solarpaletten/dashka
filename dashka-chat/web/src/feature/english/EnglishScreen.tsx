@@ -1,5 +1,5 @@
-// feature/german/GermanScreen.tsx
-// v1.2 — Conversation Mode Upgrade
+// dashka-chat/web/src/feature/english/EnglishScreen.tsx
+// v1.2 → v1.5 — Conversation Mode Upgrade
 //
 // New vs v1.1:
 //   + DirectionToggle (RU⇄DE)
@@ -204,11 +204,13 @@ const EnglishScreen: React.FC = () => {
               relative h-12 w-14 rounded-2xl font-bold text-lg
               active:scale-95 transition-all duration-150 shadow-md
               disabled:opacity-50 disabled:cursor-not-allowed
+
               ${isRecording
-                ? 'bg-red-600 hover:bg-red-500 text-white'
-                : 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
-              }
+                ? 'bg-yellow-400 hover:bg-yellow-300 text-black'
+                : 'bg-gray-800 hover:bg-gray-700 text-white' 
+}
             `}
+
             title={isRecording ? 'Нажмите ещё раз чтобы остановить' : 'Начать запись'}
           >
             {isProcessing ? (
@@ -250,7 +252,19 @@ const EnglishScreen: React.FC = () => {
               <span>{directionConfig.flag_to}</span>
               {directionConfig.target}
             </span>
-            {translatedText && (
+            {translatedText &&
+             
+              <button onClick={() => {
+                window.speechSynthesis.cancel()
+                const u = new SpeechSynthesisUtterance(translatedText)
+                u.lang = direction === 'RU_EN' ? 'en-US' : 'ru-RU'
+                window.speechSynthesis.speak(u)
+              }}>
+                🔊
+              </button>
+            
+            (
+              
               <button
                 onClick={copyResult}
                 className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300
