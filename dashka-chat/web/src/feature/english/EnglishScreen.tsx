@@ -253,26 +253,31 @@ const EnglishScreen: React.FC = () => {
               {directionConfig.target}
             </span>
             
-            <button onClick={() => {
-              window.speechSynthesis.cancel()
-              const u = new SpeechSynthesisUtterance(translatedText)
-              u.lang = direction === 'RU_EN' ? 'en-US' : 'ru-RU'
-              window.speechSynthesis.speak(u)
-            }}>
-              🔊
-            </button>
 
             {translatedText && (
-              
-              <button
-                onClick={copyResult}
-                className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300
-                           px-3 py-1 rounded-lg transition-colors border border-gray-700"
-              >
-                📋 Копировать
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    window.speechSynthesis.cancel()
+                    const u = new SpeechSynthesisUtterance(translatedText)
+                    u.lang = direction === 'RU_EN' ? 'en-US' : 'ru-RU'
+                    window.speechSynthesis.speak(u)
+                  }}
+                  className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded-lg border border-gray-700"
+                >
+                  🔊
+                </button>
+                <button
+                  onClick={copyResult}
+                  className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded-lg border border-gray-700"
+                >
+                  📋 Копировать
+                </button>
+              </div>
             )}
           </div>
+
+
           <div
             className={`px-4 pb-4 pt-1 min-h-[100px] text-base whitespace-pre-wrap
                         ${translatedText ? 'text-white' : 'text-gray-600 italic'}`}
