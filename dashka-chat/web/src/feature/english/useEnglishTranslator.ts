@@ -102,9 +102,12 @@ export function useEnglishTranslator() {
       // 🔥 v1.2.4 — озвучиваем ПЕРЕВОД (targetLang), не оригинал
 
       if (state.micState !== 'Recording') {
-      const targetSpeechLang = targetLang === 'EN' ? 'en-US' : 'ru-RU'
-      speakOriginal(res.translated_text, targetSpeechLang)
+        const targetSpeechLang = targetLang === 'EN' ? 'en-US' : 'ru-RU'
+        speakOriginal(res.translated_text, targetSpeechLang)
+      }           // ← добавить эту строку
     } catch {
+
+
     } finally {
       isPartialInFlightRef.current = false
     }
