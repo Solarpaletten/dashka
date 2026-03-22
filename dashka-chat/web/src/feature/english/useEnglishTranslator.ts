@@ -122,7 +122,7 @@ export function useEnglishTranslator() {
 
           setTimeout(() => {
             recognitionRef.current?.start()
-          }, 200)
+          }, 700)
         }
       }, 100)
 
