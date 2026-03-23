@@ -1,5 +1,5 @@
 // dashka-chat/web/src/feature/english/EnglishScreen.tsx
-// v1.2 → v1.5 — Conversation Mode Upgrade
+// v1.2 — Conversation Mode Upgrade
 //
 // New vs v1.1:
 //   + DirectionToggle (RU⇄DE)
@@ -36,9 +36,9 @@ const EnglishScreen: React.FC = () => {
     copyResult,
   } = useEnglishTranslator()
 
-  const isRecording  = micState === 'Recording'
+  const isRecording = micState === 'Recording'
   const isProcessing = micState === 'Processing'
-  const isBusy       = isTranslating || isProcessing
+  const isBusy = isTranslating || isProcessing
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -61,7 +61,7 @@ const EnglishScreen: React.FC = () => {
       />
     )
   }
-  
+
 
   // ── Normal Mode ───────────────────────────────────────────
   return (
@@ -101,7 +101,7 @@ const EnglishScreen: React.FC = () => {
             >
               🎬 Sub
             </button>
-            
+
             {/* Status dot */}
             <div className="flex items-center gap-2">
               <div className={`w-2.5 h-2.5 rounded-full ${backendAwake ? 'bg-green-400' : 'bg-red-500'}`} />
@@ -178,16 +178,16 @@ const EnglishScreen: React.FC = () => {
           <button
             onClick={translate}
             disabled={isBusy || !inputText.trim()}
-            className="flex-1 h-12 rounded-2xl bg-yellow-400 hover:bg-yellow-300
-                       disabled:opacity-40 disabled:cursor-not-allowed
-                       text-black font-bold text-sm
-                       active:scale-95 transition-all duration-150 shadow-md"
+            className="flex-1 h-14 rounded-xl bg-[#FFD84D] hover:bg-[#FFC700] active:bg-[#FFB800]
+            disabled:opacity-40 disabled:cursor-not-allowed
+           text-black font-semibold text-sm
+           active:scale-95 transition-all duration-150 shadow-md"
           >
             {isBusy ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
                 {isProcessing ? 'Обработка...' : 'Переводим...'}
               </span>
@@ -197,26 +197,27 @@ const EnglishScreen: React.FC = () => {
           </button>
 
           {/* Mic button — MicState machine */}
+
           <button
             onClick={toggleMic}
-            
+            disabled={isProcessing}
             className={`
-              relative h-12 w-14 rounded-2xl font-bold text-lg
-              active:scale-95 transition-all duration-150 shadow-md
-              disabled:opacity-50 disabled:cursor-not-allowed
+            relative h-14 w-14 rounded-xl font-semibold text-lg
+            active:scale-95 transition-all duration-150 shadow-md
+           disabled:opacity-50 disabled:cursor-not-allowed
 
-              ${isRecording
-                ? 'bg-yellow-400 hover:bg-yellow-300 text-black'
-                : 'bg-gray-800 hover:bg-gray-700 text-white' 
-}
-            `}
+           ${isRecording
+                ? 'bg-[#FFD84D] hover:bg-[#FFC700] active:bg-[#FFB800] text-black'
+                : 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
+              }
+  `}
 
             title={isRecording ? 'Нажмите ещё раз чтобы остановить' : 'Начать запись'}
           >
             {isProcessing ? (
               <svg className="w-5 h-5 mx-auto animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4"/>
-                <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8z"/>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
+                <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8z" />
               </svg>
             ) : isRecording ? (
               '⏹'
@@ -226,7 +227,7 @@ const EnglishScreen: React.FC = () => {
 
             {/* Pulse rings */}
             {isRecording && (
-              <span className="absolute inset-0 rounded-2xl bg-red-500 opacity-30 animate-ping pointer-events-none" />
+              <span className="absolute inset-0 rounded-xl bg-red-500 opacity-30 animate-ping pointer-events-none" />
             )}
           </button>
         </div>
@@ -252,28 +253,16 @@ const EnglishScreen: React.FC = () => {
               <span>{directionConfig.flag_to}</span>
               {directionConfig.target}
             </span>
-            
+
 
             {translatedText && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    window.speechSynthesis.cancel()
-                    const u = new SpeechSynthesisUtterance(translatedText)
-                    u.lang = direction === 'RU_EN' ? 'en-US' : 'ru-RU'
-                    window.speechSynthesis.speak(u)
-                  }}
-                  className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded-lg border border-gray-700"
-                >
-                  🔊
-                </button>
-                <button
-                  onClick={copyResult}
-                  className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded-lg border border-gray-700"
-                >
-                  📋 Копировать
-                </button>
-              </div>
+              <button
+                onClick={copyResult}
+                className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300
+             px-3 py-1 rounded-lg transition-colors border border-gray-700"
+              >
+                📋 Копировать
+              </button>
             )}
           </div>
 

@@ -33,6 +33,7 @@ export function useEnglishTranslator() {
   const silenceTimerRef = useRef<number | null>(null)
   const lastSpeechTimeRef = useRef(0)
   const lastSpokenTimeRef = useRef(0)
+  const ttsUnlockedRef = useRef(false)
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const mediaRecRef = useRef<MediaRecorder | null>(null)
@@ -41,20 +42,38 @@ export function useEnglishTranslator() {
   const set = useCallback((partial: Partial<TranslatorState>) =>
     setState(prev => ({ ...prev, ...partial })), [])
 
+  const unlockTTS = useCallback(() => {
+      if (ttsUnlockedRef.current) return
+      if (!window.speechSynthesis) return
+      const u = new SpeechSynthesisUtterance(' ')
+      u.volume = 0
+      window.speechSynthesis.speak(u)
+      ttsUnlockedRef.current = true
+      }, [])
+
   // 🔥 v1.2.1 — TTS оригинала: cancel() только своей очереди, не трогает перевод
   const speakOriginal = useCallback((text: string, lang: string) => {
     if (!text.trim()) return
 
-    if (window.speechSynthesis.speaking) return 
+    // if (window.speechSynthesis.speaking) return 
+    if (!window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+
+
 
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = lang
     utterance.rate = 0.95
+    
+    const voices = window.speechSynthesis.getVoices()
+    utterance.voice = voices.find(v => v.lang === lang) || null
 
     lastSpokenRef.current = text
     lastSpokenTimeRef.current = Date.now()
     window.speechSynthesis.speak(utterance)
   }, [])
+
+
 
   useEffect(() => { wakeUp() }, [])
 
@@ -69,6 +88,7 @@ export function useEnglishTranslator() {
   }, [])
 
   const translate = useCallback(async (textOverride?: string) => {
+    unlockTTS() // ✅ ВСТАВИТЬ СЮДА
     const text = (textOverride ?? state.inputText).trim()
     if (!text) return
     const { targetLang, sourceLangCode } = DIRECTION_CONFIG[state.direction]
@@ -89,6 +109,7 @@ export function useEnglishTranslator() {
       set({ isTranslating: false })
     }
   }, [state.direction])
+
 
   const handleSpeechEnd = useCallback(async () => {
     const text = finalTextRef.current.trim()
@@ -152,6 +173,7 @@ export function useEnglishTranslator() {
     const { micState, direction } = state
 
     if (micState === 'Idle') {
+      unlockTTS() // 🔥 ДОБАВИТЬ СЮДА
       window.speechSynthesis.cancel() //task1 cancel
 
       finalTextRef.current = '' 
@@ -170,7 +192,7 @@ export function useEnglishTranslator() {
       set({ micState: 'Idle' })
       return
     }
-
+    
 
     if (micState === 'Processing') return
 
@@ -311,7 +333,6 @@ export function useEnglishTranslator() {
 
   }, [])
 
-  
 
   const clear = useCallback(() => {
     bufferRef.current = ''

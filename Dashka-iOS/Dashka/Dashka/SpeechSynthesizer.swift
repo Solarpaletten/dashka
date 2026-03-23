@@ -26,8 +26,12 @@ final class SpeechSynthesizer {
         let session = AVAudioSession.sharedInstance()
         do {
             try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
-            try session.setActive(true)
-            try session.overrideOutputAudioPort(.speaker)
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+            
+            if session.category != .playback {
+            try? session.overrideOutputAudioPort(.speaker)
+        }
+
             print("🔊 Audio session → playback")
         } catch {
             print("❌ Audio session switch error:", error)
@@ -35,7 +39,7 @@ final class SpeechSynthesizer {
 
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: language)
-        utterance.rate = 0.5
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.9
 
         synthesizer.stopSpeaking(at: .immediate)
 
@@ -49,7 +53,7 @@ final class SpeechSynthesizer {
         synthesizer.stopSpeaking(at: .immediate)
     }
 
-    var isSpeaking: Bool {
-        return synthesizer.isSpeaking
-    }
+    while SpeechSynthesizer.shared.isSpeaking {
+    try? await Task.sleep(nanoseconds: 100_000_000)
+}
 }

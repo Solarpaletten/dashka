@@ -15,10 +15,11 @@ final class AudioRecorderService: NSObject, ObservableObject {
         await AVAudioApplication.requestRecordPermission()
     }
 
-    func start(locale: String) throws -> URL {
+    func start() throws -> URL {
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
-        try session.setActive(true)
+        
+        try session.setCategory(.record, mode: .measurement, options: [.duckOthers])
+        try session.setActive(true, options: .notifyOthersOnDeactivation)
 
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString + ".m4a")
@@ -38,16 +39,21 @@ final class AudioRecorderService: NSObject, ObservableObject {
     }
 
     func stop() {
-        recorder?.stop()
-    }
+    recorder?.stop()
+    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    recorder = nil
+}
+    
 
     func cancel() {
-        recorder?.stop()
-        if let url = recordingURL {
-            try? FileManager.default.removeItem(at: url)
-        }
-        recordingURL = nil
+    recorder?.stop()
+    if let url = recordingURL {
+        try? FileManager.default.removeItem(at: url)
     }
+    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    recordingURL = nil
+    recorder = nil
+}
 }
 
 extension AudioRecorderService: AVAudioRecorderDelegate {
